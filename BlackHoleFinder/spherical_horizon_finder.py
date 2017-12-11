@@ -1,45 +1,52 @@
 import yt
+from yt import derived_field
 import numpy as np
-from yt.units.yt_array import YTArray
+from numpy.linalg import inv
 from scipy.interpolate import interp1d
 from scipy.optimize import fsolve
-from yt import derived_field
 import time
 import os
 import matplotlib
 #matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-from numpy.linalg import inv
-
 yt.enable_parallelism()
 
-# Plot parameters
-line = 3 # Line width
-alp = 0.6 # alpha
-Quality = 'cubic' 
+# ==============================================================================
+#		Spherical Horizon finder 
+#		
+# Assumes (Obviously) spherical symmetry !! Gives bad results if not !
+# Input = Black hole center
+# ==============================================================================
 
 #Loading dataset
 ds = yt.load('../out*.hdf5')
 
-
 centerXYZ =  ds[0].domain_right_edge/2
 center = float(centerXYZ[0])
-t0 = ds[0].current_time
 
+
+# =================================
+#  INPUT #  
+# =================================
 BHcenter = [center,center,center]
+# ================================
+# ================================
 
 time_data = []
 CycleData = []
-MasterData = []
-counter = 0
+AHradius = []
+AHradiusError = []
+
+
+# used interpolation quality
+Quality = 'quadratic' 
 
 for i in ds:
 
-	counter += 1
+	start = time.time()
 
-
+	# Gradients calculated by YT
+		
 	i.add_gradient_fields(('chombo', u'chi'))
 	i.add_gradient_fields(('chombo', u'h11'))
 	i.add_gradient_fields(('chombo', u'h12'))
@@ -48,18 +55,27 @@ for i in ds:
 	i.add_gradient_fields(('chombo', u'h23'))
 	i.add_gradient_fields(('chombo', u'h33'))
 
-	start = time.time()
-	for j in sorted(i.derived_field_list):
-  		print(j)
 
 # ========================================================
 #	Definitions
 # ========================================================
 
-	c = i.ray((BHcenter[0]*0,BHcenter[1],BHcenter[2]),(2*BHcenter[0],BHcenter[1],BHcenter[2]))
+	
+	print ("Preparing calculation ... ")
+
+	c = i.ray((BHcenter[0],BHcenter[1],BHcenter[2]),(BHcenter[0]*2,BHcenter[1],BHcenter[2]))
 	BHcenterYT = i.arr(BHcenter, "code_length")
 	
-	srt = np.argsort(c["x"])	
+	# Yt gives data unsorted 
+	
+	x = np.array(c["x"]- BHcenterYT[0])
+	y = np.array(c["y"]- BHcenterYT[1])
+	z = np.array(c["z"]- BHcenterYT[2])
+
+	r = np.sqrt(x*x+y*y+z*z)
+	srt = np.argsort(r)	
+
+	# Importing Coordinates 
 
 	x = np.array(c["x"][srt]- BHcenterYT[0])
 	y = np.array(c["y"][srt]- BHcenterYT[1])
@@ -84,7 +100,7 @@ for i in ds:
 
 	chi = np.array(c["chi"][srt]);
 	chi2 = chi*chi
-	chi1 = chi
+
 	
 	g11 = np.array(c["h11"][srt]);
 	g12 = np.array(c["h12"][srt]);
@@ -136,7 +152,7 @@ for i in ds:
 	A = np.array(A)
 
 # ========================================================
-#	Jacobian 
+#	Define normal vector and invert metric
 # ========================================================
 
 	N = len(chi)
@@ -173,6 +189,7 @@ for i in ds:
 	dgdx = np.zeros([3,3,3,N])	
 	dchidx = np.zeros([3,N])	
 
+	print ("Calculating metric x Gradient ... ")
 	dgdx[0,0,0,:] = c["h11_gradient_x"][srt]
 	dgdx[0,1,0,:] = c["h12_gradient_x"][srt]
 	dgdx[0,2,0,:] = c["h13_gradient_x"][srt]
@@ -183,6 +200,8 @@ for i in ds:
 	dgdx[2,0,0,:] = dgdx[0,2,0,:]
 	dgdx[2,1,0,:] = dgdx[1,2,0,:]
 
+
+	print ("Calculating metric y Gradient ... ")
 	dgdx[0,0,1,:] = c["h11_gradient_y"][srt]
 	dgdx[0,1,1,:] = c["h12_gradient_y"][srt]
 	dgdx[0,2,1,:] = c["h13_gradient_y"][srt]
@@ -194,6 +213,7 @@ for i in ds:
 	dgdx[2,1,1,:] = dgdx[1,2,1,:]
 
 
+	print ("Calculating metric z Gradient ... ")
 	dgdx[0,0,2,:] = c["h11_gradient_z"][srt]
 	dgdx[0,1,2,:] = c["h12_gradient_z"][srt]
 	dgdx[0,2,2,:] = c["h13_gradient_z"][srt]
@@ -205,27 +225,18 @@ for i in ds:
 	dgdx[2,1,2,:] = dgdx[1,2,2,:]
 
 	
+	print ("Calculating chi Gradient ... ")
 	dchidx[0,:] = c["chi_gradient_x"][srt]
 	dchidx[1,:] = c["chi_gradient_y"][srt]
 	dchidx[2,:] = c["chi_gradient_z"][srt]
 
-	plt.figure(figsize=(20,10))
-	plt.plot(x,dgdx[0,0,1,:],label = "deriv",linewidth = 3,color = "black",linestyle = ":")	
-	plt.plot(x,c["h11_gradient_y"][srt],label = "derivref",linewidth = 1,color = "red",linestyle = "-")	
-	plt.legend(loc = "best")
-#	plt.ylim([-0.4,0.4])
-	plt.xlim([-50,50])
-	plt.ylabel(r"Quality $[\%]$")
-	plt.xlabel(r"r$[M]$")
-	plt.savefig("Quality.png")
-	plt.show()
-	plt.close()
-
-				
 # ========================================================
 #	Calculation of Omega
 #	Eq. 7.41 in shapiro book 
 # ========================================================
+
+
+	print ("Calculating Theta ... ")
 	E = np.zeros(N)
 	B = np.zeros(N)
 	C = np.zeros(N)
@@ -263,19 +274,52 @@ for i in ds:
 	Theta = 1.0/np.sqrt(D)*(E/D + B) + C/D - Kscalar;
 		
 		
-	plt.figure(figsize=(20,10)) 	
-#	plt.plot(x,DADR,label = "DADR",linewidth = 3,color = "darkviolet",linestyle = "--")
-	plt.scatter(x,Theta,label = "Calculation",linewidth = 3,color = "darkviolet",linestyle = "--")
-	plt.scatter(x,Omega,label = "Ref",linewidth = 3,color = "black",linestyle = "--")
-	plt.plot(x,np.zeros(N),label = "Ref",linewidth = 1.4,color = "black",linestyle = ":")
-	plt.legend(loc = "best")
-	plt.ylabel(r"Quality $[\%]$")
-	plt.xlabel(r"r$[M]$")
-	plt.ylim([-0.2,0.2])
-	plt.xlim([-50,50])
-	plt.savefig("ADR.png")
-	plt.show()
-			
+	
+
+# =====================================================
+#	Finding Horizon
+# =====================================================
+		
+	AHguess = 0 
+	for d in range(N):
+		if Theta[N-1-d]<0:
+			AHguess = N-1-d
+			break
+
+	if AHguess == 0 : 
+		AHChecker = False
+	else : 
+		AHChecker = True
+		print("Black hole horizon has formed !!")
+		time_data.append(i.current_time)
+		
+
+	if (AHChecker):
+		ThetaInterpol = interp1d(r, Omega, kind=Quality)
+		# Estimating Error by using local resolution 
+		AH_radius_error = abs(r[AHguess]-r[AHguess-1])
+		AHradiusError.append(AH_radius_error)
+		BHradguess = r[AHguess]
+		AHrad = fsolve(ThetaInterpol,BHradguess+AH_radius_error)	
+		print (BHradguess)
+		AHradius = []
 
 
+		
+		plt.figure(figsize=(20,10)) 	
+		plt.scatter(r,Theta,label = "Calculation",linewidth = 3,color = "darkviolet",linestyle = "--")
+		plt.scatter(r,Omega,label = "Ref",linewidth = 3,color = "black",linestyle = "--")
+		plt.plot(np.ones(N)*AHrad,np.linspace(min(Theta)*2,max(Theta)*2,N),label = "Black hole horizon",linewidth = 1.4,color = "black")
+		plt.legend(loc = "best")
+		plt.ylim([min(Theta)*2,max(Theta)*2])
+		plt.ylabel(r"Quality $[\%]$")
+		plt.xlabel(r"r$[M]$")
+		plt.xlim([0,50])
+		plt.savefig("ADR.png")
+		plt.show()
 
+
+	CycleData.append(time.time()-start)
+	np.savetxt('Cycletime.out',CycleData)
+	np.savetxt('AH_radius_error.out',AHradiusError)
+	np.savetxt('black_hole_formation_time.out',time_data)
