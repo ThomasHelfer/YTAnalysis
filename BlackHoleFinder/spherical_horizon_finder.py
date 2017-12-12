@@ -7,19 +7,23 @@ from scipy.optimize import fsolve
 import time
 import os
 import matplotlib
-#matplotlib.use('Agg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 yt.enable_parallelism()
 
 # ==============================================================================
-#		Spherical Horizon finder 
+#			Spherical Horizon finder 
 #		
-# Assumes (Obviously) spherical symmetry !! Gives bad results if not !
-# Input = Black hole center
+#  Assumes (Obviously) spherical symmetry !! Gives bad results if not !
+#  Input = Black hole center
+#
+#  For valid calculation of Mass one has to slice along x-Axis !!
+#       Output :-Black Hole mass (with Error estimate)
+#               -Black Hole radius (with Error estimate)
 # ==============================================================================
 
 #Loading dataset
-ds = yt.load('../out*.hdf5')
+ds = yt.load('../../*.hdf5')
 
 centerXYZ =  ds[0].domain_right_edge/2
 center = float(centerXYZ[0])
@@ -36,7 +40,8 @@ time_data = []
 CycleData = []
 AHradius = []
 AHradiusError = []
-
+BHmass = []
+BHmassError = []
 
 # used interpolation quality
 Quality = 'quadratic' 
@@ -125,7 +130,7 @@ for i in ds:
 
 	g = np.array(g)
 
-	Omega = c["omega"][srt]
+#	Omega = c["omega"][srt]
 
 	Kscalar = c["K"][srt]
 	Kscalar = np.array(Kscalar)	
@@ -295,31 +300,33 @@ for i in ds:
 		
 
 	if (AHChecker):
-		ThetaInterpol = interp1d(r, Omega, kind=Quality)
+		ThetaInterpol = interp1d(r, Theta, kind=Quality)
+                gamma22Interpol = interp1d(x, g[1,1,:], kind=Quality)
+		gamma33Interpol = interp1d(x, g[2,2,:], kind=Quality)
+		chiInterpol = interp1d(x, chi, kind=Quality)     
 		# Estimating Error by using local resolution 
 		AH_radius_error = abs(r[AHguess]-r[AHguess-1])
 		AHradiusError.append(AH_radius_error)
 		BHradguess = r[AHguess]
 		AHrad = fsolve(ThetaInterpol,BHradguess+AH_radius_error)	
-		print (BHradguess)
-		AHradius = []
+		AHradius.append(AHrad)
 
+                gamma22 = gamma22Interpol(AHrad)
+                gamma33 = gamma33Interpol(AHrad)
+                chi     = chiInterpol(AHrad)
 
-		
-		plt.figure(figsize=(20,10)) 	
-		plt.scatter(r,Theta,label = "Calculation",linewidth = 3,color = "darkviolet",linestyle = "--")
-		plt.scatter(r,Omega,label = "Ref",linewidth = 3,color = "black",linestyle = "--")
-		plt.plot(np.ones(N)*AHrad,np.linspace(min(Theta)*2,max(Theta)*2,N),label = "Black hole horizon",linewidth = 1.4,color = "black")
-		plt.legend(loc = "best")
-		plt.ylim([min(Theta)*2,max(Theta)*2])
-		plt.ylabel(r"Quality $[\%]$")
-		plt.xlabel(r"r$[M]$")
-		plt.xlim([0,50])
-		plt.savefig("ADR.png")
-		plt.show()
+                Mass = 1./(2.*np.sqrt(chi))*(AHrad)*(gamma22*gamma33)**(1./4.)
+                BHmass.append(Mass)
+	
+	
+                MassError = 1./(2.*np.sqrt(chi))*(AHradiusError)*(gamma22*gamma33)**(1./4.)
+		BHmassError.append(MassError)
 
 
 	CycleData.append(time.time()-start)
 	np.savetxt('Cycletime.out',CycleData)
+	np.savetxt('BHmass.out',BHmass)
+	np.savetxt('BHmassError.out',BHmassError)
 	np.savetxt('AH_radius_error.out',AHradiusError)
+	np.savetxt('AH_radius.out',AHradius)
 	np.savetxt('black_hole_formation_time.out',time_data)
