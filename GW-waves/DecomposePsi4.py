@@ -9,10 +9,10 @@ yt.enable_parallelism()
 
 
 # ===============================================
-#	Decomposition of Psi4 into spinweighted spherical harmonics  
-#           		l = 2,3,4 
-# 	Input: Any dataset with Weyl1, Weyl2 and Radius of sphere r
-#       Output: \psi_4 *r 
+#	Decomposition of Psi4 into spinweighted spherical harmonics	 
+#					l = 2,3,4 
+#	Input: Any dataset with Weyl1, Weyl2 and Radius of sphere r
+#		Output: \psi_4 *r 
 # ===============================================
 
 # ===============================================
@@ -31,7 +31,7 @@ ds = yt.load(loc)
 # =================
 # Init Outputarrays
 # =================
-# l = 2  
+# l = 2	 
 Weyl4_l2_m0_data  = []
 # positive m  
 Weyl4_l2_m1_data = []
@@ -39,7 +39,7 @@ Weyl4_l2_m2_data = []
 # negative m  
 Weyl4_l2_m1n_data = []
 Weyl4_l2_m2n_data = []
-# l = 3  
+# l = 3	 
 Weyl4_l3_m0_data = []
 # positive m  
 Weyl4_l3_m1_data = []  
@@ -49,7 +49,7 @@ Weyl4_l3_m3_data = []
 Weyl4_l3_m1n_data = [] 
 Weyl4_l3_m2n_data = []
 Weyl4_l3_m3n_data = []
-# l = 4  
+# l = 4	 
 Weyl4_l4_m0_data = []
 # positive m 
 Weyl4_l4_m1_data = []
@@ -116,7 +116,7 @@ sY_l4_m3n = 3.*np.sqrt(7./(2.*np.pi))*np.exp(-3*1j*phi)*(1+2*np.cos(theta))*np.s
 sY_l4_m4n = 3./4.*np.exp(-4*1j*phi)*np.sqrt(7/np.pi)*np.sin(theta/2)**4*np.sin(theta)**2
 	
 # ==============================
-#         Loop over all frames 
+#		  Loop over all frames 
 # ==============================
 for i in ds:
 
@@ -133,7 +133,7 @@ for i in ds:
 	print ("Integrating ... ")	
 	
 	Sr = 0 + 1j*0	
-	# l = 2  
+	# l = 2	 
 	Weyl4_l2_m0 = 0 + 1j*0
 	# positive m  
 	Weyl4_l2_m1 = 0 + 1j*0
@@ -142,7 +142,7 @@ for i in ds:
 	Weyl4_l2_m1n = 0 + 1j*0 
 	Weyl4_l2_m2n = 0 + 1j*0
 
-	# l = 3  
+	# l = 3	 
 	Weyl4_l3_m0 = 0 + 1j*0
 	# positive m  
 	Weyl4_l3_m1 = 0 + 1j*0
@@ -154,7 +154,7 @@ for i in ds:
 	Weyl4_l3_m2n = 0 + 1j*0
 	Weyl4_l3_m3n = 0 + 1j*0
 
-	# l = 4  
+	# l = 4	 
 	Weyl4_l4_m0 = 0 + 1j*0
 	# positive m  
 	Weyl4_l4_m1 = 0 + 1j*0
@@ -173,17 +173,17 @@ for i in ds:
 
 	for (k,x) in enumerate(phi):
 
-                phi_var = phi[k]
-                theta_var = theta[k]
-                x1 = Rad*np.cos(phi_var)*np.sin(theta_var)+float(center[0])
-                y1 = Rad*np.sin(phi_var)*np.sin(theta_var)+float(center[1])
-                z1 = Rad*np.cos(theta_var)+float(center[2])
+				phi_var = phi[k]
+				theta_var = theta[k]
+				x1 = Rad*np.cos(phi_var)*np.sin(theta_var)+float(center[0])
+				y1 = Rad*np.sin(phi_var)*np.sin(theta_var)+float(center[1])
+				z1 = Rad*np.cos(theta_var)+float(center[2])
 
-                c = [x1,y1,z1]
-                ptn = i.point(c)
-                ReWeyl = float(ptn["Weyl1"][0])
-                ImWeyl = float(ptn["Weyl2"][0])
-	        Weyl4 = ReWeyl + 1j*ImWeyl
+				c = [x1,y1,z1]
+				ptn = i.point(c)
+				ReWeyl = float(ptn["Weyl1"][0])
+				ImWeyl = float(ptn["Weyl2"][0])
+			Weyl4 = ReWeyl + 1j*ImWeyl
 		
 
 		Weyl4_l2_m0 += 4*pi*w[k]*np.conjugate(sY_l2_m0[k])*Weyl4*Rad
@@ -193,7 +193,7 @@ for i in ds:
 		# negative m  
 		Weyl4_l2_m1n += 4*pi*w[k]*np.conjugate(sY_l2_m1n[k])*Weyl4*Rad
 		Weyl4_l2_m2n += 4*pi*w[k]*np.conjugate(sY_l2_m2n[k])*Weyl4*Rad
-		# l = 3  
+		# l = 3	 
 		Weyl4_l3_m0 += 4*pi*w[k]*np.conjugate(sY_l3_m0[k])*Weyl4*Rad
 		# positive m  
 		Weyl4_l3_m1 += 4*pi*w[k]*np.conjugate(sY_l3_m1[k])*Weyl4*Rad
@@ -203,7 +203,7 @@ for i in ds:
 		Weyl4_l3_m1n += 4*pi*w[k]*np.conjugate(sY_l3_m1n[k])*Weyl4*Rad
 		Weyl4_l3_m2n += 4*pi*w[k]*np.conjugate(sY_l3_m2n[k])*Weyl4*Rad
 		Weyl4_l3_m3n += 4*pi*w[k]*np.conjugate(sY_l3_m3n[k])*Weyl4*Rad
-		# l = 4  
+		# l = 4	 
 		Weyl4_l4_m0 += 4*pi*w[k]*np.conjugate(sY_l4_m0[k])*Weyl4*Rad
 		# positive m  
 		Weyl4_l4_m1 += 4*pi*w[k]*np.conjugate(sY_l4_m1[k])*Weyl4*Rad
@@ -222,28 +222,28 @@ for i in ds:
 
 
 	
-	# l = 2  
+	# l = 2	 
 	Weyl4_l2_m0_data.append(Weyl4_l2_m0)
 	# positive m  
 	Weyl4_l2_m1_data.append(Weyl4_l2_m1)  
 	Weyl4_l2_m2_data.append(Weyl4_l2_m2)  
 	# negative m  
-	Weyl4_l2_m1n_data.append(Weyl4_l2_m1n)  
-	Weyl4_l2_m2n_data.append(Weyl4_l2_m2n)  
+	Weyl4_l2_m1n_data.append(Weyl4_l2_m1n)	
+	Weyl4_l2_m2n_data.append(Weyl4_l2_m2n)	
 
 
-	# l = 3  
+	# l = 3	 
 	Weyl4_l3_m0_data.append(Weyl4_l3_m0)
 	# positive m  
 	Weyl4_l3_m1_data.append(Weyl4_l3_m1)  
 	Weyl4_l3_m2_data.append(Weyl4_l3_m2)  
 	Weyl4_l3_m3_data.append(Weyl4_l3_m3) 
 	# negative m  
-	Weyl4_l3_m1n_data.append(Weyl4_l3_m1n)  
-	Weyl4_l3_m2n_data.append(Weyl4_l3_m2n)  
-	Weyl4_l3_m3n_data.append(Weyl4_l3_m3n)  
+	Weyl4_l3_m1n_data.append(Weyl4_l3_m1n)	
+	Weyl4_l3_m2n_data.append(Weyl4_l3_m2n)	
+	Weyl4_l3_m3n_data.append(Weyl4_l3_m3n)	
 
-	# l = 4  
+	# l = 4	 
 	Weyl4_l4_m0_data.append(Weyl4_l4_m0)
 	# positive m  
 	Weyl4_l4_m1_data.append(Weyl4_l4_m1)  
@@ -252,7 +252,7 @@ for i in ds:
 	Weyl4_l4_m4_data.append(Weyl4_l4_m4) 
 	# negative m  
 	Weyl4_l4_m1n_data.append(Weyl4_l4_m1n) 
-	Weyl4_l4_m2n_data.append(Weyl4_l4_m2n)  
+	Weyl4_l4_m2n_data.append(Weyl4_l4_m2n)	
 	Weyl4_l4_m3n_data.append(Weyl4_l4_m3n) 
 	Weyl4_l4_m4n_data.append(Weyl4_l4_m4n)
 
