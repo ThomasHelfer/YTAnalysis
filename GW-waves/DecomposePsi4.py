@@ -173,18 +173,16 @@ for i in ds:
 
 	for (k,x) in enumerate(phi):
 
-				phi_var = phi[k]
-				theta_var = theta[k]
-				x1 = Rad*np.cos(phi_var)*np.sin(theta_var)+float(center[0])
-				y1 = Rad*np.sin(phi_var)*np.sin(theta_var)+float(center[1])
-				z1 = Rad*np.cos(theta_var)+float(center[2])
-
-				c = [x1,y1,z1]
-				ptn = i.point(c)
-				ReWeyl = float(ptn["Weyl1"][0])
-				ImWeyl = float(ptn["Weyl2"][0])
-			Weyl4 = ReWeyl + 1j*ImWeyl
-		
+		phi_var = phi[k]
+		theta_var = theta[k]
+		x1 = Rad*np.cos(phi_var)*np.sin(theta_var)+float(center[0])
+		y1 = Rad*np.sin(phi_var)*np.sin(theta_var)+float(center[1])
+		z1 = Rad*np.cos(theta_var)+float(center[2])
+		c = [x1,y1,z1]
+		ptn = i.point(c)
+		ReWeyl = float(ptn["Weyl1"][0])
+		ImWeyl = float(ptn["Weyl2"][0])
+		Weyl4 = ReWeyl + 1j*ImWeyl
 
 		Weyl4_l2_m0 += 4*pi*w[k]*np.conjugate(sY_l2_m0[k])*Weyl4*Rad
 		# positive m  
