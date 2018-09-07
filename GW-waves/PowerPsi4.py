@@ -93,7 +93,7 @@ for i in ds:
 # ==================================================
 
 		Spher = 0 
-        	for (k,x) in enumerate(phi):
+		for (k,x) in enumerate(phi):
 			Spher += 4*pi*w[k]*np.absolute(Int[k])**2
 		np.savetxt('time.out',timedata)
 		np.savetxt('time.out',timedata)
