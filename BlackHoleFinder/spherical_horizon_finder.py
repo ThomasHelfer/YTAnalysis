@@ -301,7 +301,7 @@ for i in ds:
 
 	if (AHChecker):
 		ThetaInterpol = interp1d(r, Theta, kind=Quality)
-                gamma22Interpol = interp1d(x, g[1,1,:], kind=Quality)
+		gamma22Interpol = interp1d(x, g[1,1,:], kind=Quality)
 		gamma33Interpol = interp1d(x, g[2,2,:], kind=Quality)
 		chiInterpol = interp1d(x, chi, kind=Quality)
 		# Estimating Error by using local resolution
@@ -311,15 +311,15 @@ for i in ds:
 		AHrad = fsolve(ThetaInterpol,BHradguess+AH_radius_error)
 		AHradius.append(AHrad)
 
-                gamma22 = gamma22Interpol(AHrad)
-                gamma33 = gamma33Interpol(AHrad)
-                chi     = chiInterpol(AHrad)
+		gamma22 = gamma22Interpol(AHrad)
+		gamma33 = gamma33Interpol(AHrad)
+		chi = chiInterpol(AHrad)
 
-                Mass = 1./(2.*np.sqrt(chi))*(AHrad)*(gamma22*gamma33)**(1./4.)
-                BHmass.append(Mass)
+		Mass = 1./(2.*np.sqrt(chi))*(AHrad)*(gamma22*gamma33)**(1./4.)
+		BHmass.append(Mass)
 
 
-                MassError = 1./(2.*np.sqrt(chi))*(AH_radius_error)*(gamma22*gamma33)**(1./4.)
+		MassError = 1./(2.*np.sqrt(chi))*(AH_radius_error)*(gamma22*gamma33)**(1./4.)
 		BHmassError.append(MassError)
 
 
