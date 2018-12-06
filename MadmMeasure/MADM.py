@@ -22,14 +22,14 @@ yt.enable_parallelism()
 # ==============================================================================
 
 #Loading dataset
-ds = yt.load('../../*.hdf5')
+ds = yt.load('../../ScalarField_*.hdf5')
 
 centerXYZ =  ds[0].domain_right_edge/2
 center = float(centerXYZ[0])
 
-Rad = 100.
+Rad = 64.
 
-NInt = 7
+NInt = 17
 coord = np.loadtxt('PointDistFiles/lebedev/lebedev_%03d.txt'% NInt)
 theta = coord[:,1]*pi/180; phi = coord[:,0]*pi/180 + pi
 w = coord[:,2]
@@ -78,6 +78,9 @@ for i in ds:
 
 	MADM = 0
 
+	JAMDInt = np.zeros(3)
+	PAMDInt = np.zeros(3)
+
 	for (k,x) in enumerate(phi):
 		phi_var = phi[k]
 		theta_var = theta[k]
@@ -86,8 +89,9 @@ for i in ds:
 		z1 = Rad*np.cos(theta_var)+float(centerXYZ[2])
 		ptnEx = [x1,y1,z1]
 		c = i.point(ptnEx)
-	
+
 		BHcenterYT = i.arr(BHcenter, "code_length")
+
 
 	# Yt gives data unsorted
 
@@ -145,7 +149,10 @@ for i in ds:
 		g[2].append(g23)
 		g[2].append(g33)
 
+
 		g = np.array(g)
+		gu = np.linalg.inv(g[:,:,0])
+
 
 # ========================================================
 #	Define normal vector and invert metric
@@ -161,6 +168,7 @@ for i in ds:
 			s[1,IND] = y[IND]/r[IND]
 			s[2,IND] = z[IND]/r[IND]
 
+		
 
 # ========================================================
 #	Derivatives
@@ -218,18 +226,31 @@ for i in ds:
 		counter += 1. 
 		print ("Calculating MADM ... ")
 		print ("Percentage ",counter/NumInt*100," %"  )
-		MADMInt = np.zeros(N)
+#		MADMInt = np.zeros(N)
+		MADMInt = 0
+		JAMDInt = np.zeros(3)
+		PAMDInt = np.zeros(3)
+		levi = np.zeros((3,3,3))
 
+                levi[0,1,2] = 1
+		levi[1,2,0] = 1
+		levi[2,0,1] = 1
+                levi[2,1,0] = -1
+		levi[1,0,2] = -1
+		levi[0,2,1] = -1
+
+
+			
 # ----------------------------------------------------------
-		for d in range(3):
-			for j in range(3):
-				MADMInt += (dgdx[d,j,d]/chi-dchidx[d]/chi**2.*g[d,j])*s[j]
 
-		for d in range(3):
-			for j in range(3):
-				MADMInt += -(-chi**(-2.)*dchidx[d]*g[j,j]+dgdx[j,j,d]*chi**(-1.))*s[d]
-
-		MADM += MADMInt[0]*w[k]
+		for d0 in range(3):
+			for d1 in range(3):
+				for d2 in range(3):
+					for d3 in range(3):
+ 						MADMInt += s[d0]/(16.*np.pi)*gu[d1,d3]*gu[d0,d2]*(1./np.sqrt(chi)*(dgdx[d2,d3,d1] - dgdx[d1,d3,d2]) - 1./chi**(3./2.)*(g[d2,d3]*dchidx[d1] - g[d1,d3]*dchidx[d2]))
+		
+				
+		MADM += w[k]*MADMInt*Rad*Rad*4.0*np.pi
 
 		print("ADM mass = ", MADM)
 
