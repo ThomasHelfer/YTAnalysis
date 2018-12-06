@@ -27,7 +27,7 @@ ds = yt.load('../../KerrBH_*.hdf5')
 centerXYZ =  ds[0].domain_right_edge/2
 center = float(centerXYZ[0])
 
-Rad = 250.
+Rad = 128.
 
 NInt = 27
 coord = np.loadtxt('PointDistFiles/lebedev/lebedev_%03d.txt'% NInt)
@@ -306,6 +306,7 @@ for i in ds:
 				for d2 in range(3):
 					for d3 in range(3):
 						JADMInt[d0] += - 1./(8*np.pi)*levi[d0,d1,d2]*s[d3]*pstn[d1]*(K*deltaij[d3,d2])
+						#JADMInt[d0] += + 1./(8*np.pi)*levi[d0,d1,d2]*s[d3]*pstn[d1]*(Ktsr[d3,d2]) 
 						for d4 in range(3):
 							for d5 in range(3):
 								JADMInt[d0] += + 1./(8*np.pi)*levi[d0,d1,d2]*s[d3]*pstn[d1]*(chi*chi*gu[d4,d3]*gu[d5,d2]*Ktsr[d4,d5]) 
