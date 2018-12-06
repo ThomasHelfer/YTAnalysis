@@ -22,14 +22,14 @@ yt.enable_parallelism()
 # ==============================================================================
 
 #Loading dataset
-ds = yt.load('../../ScalarField_*.hdf5')
+ds = yt.load('../../KerrBH_*.hdf5')
 
 centerXYZ =  ds[0].domain_right_edge/2
 center = float(centerXYZ[0])
 
-Rad = 64.
+Rad = 250.
 
-NInt = 17
+NInt = 27
 coord = np.loadtxt('PointDistFiles/lebedev/lebedev_%03d.txt'% NInt)
 theta = coord[:,1]*pi/180; phi = coord[:,0]*pi/180 + pi
 w = coord[:,2]
@@ -47,6 +47,9 @@ BHcenter = [center,center,center]
 time_data = []
 CycleData = []
 MADM_data = []
+J1ADM_data = []
+J2ADM_data = []
+J3ADM_data = []
 
 # used interpolation quality
 Quality = 'quadratic'
@@ -78,8 +81,8 @@ for i in ds:
 
 	MADM = 0
 
-	JAMDInt = np.zeros(3)
-	PAMDInt = np.zeros(3)
+	JADM = np.zeros(3)
+	PADM = np.zeros(3)
 
 	for (k,x) in enumerate(phi):
 		phi_var = phi[k]
@@ -153,6 +156,30 @@ for i in ds:
 		g = np.array(g)
 		gu = np.linalg.inv(g[:,:,0])
 
+
+		A11 = np.array(c["A11"][srt]);
+		A12 = np.array(c["A12"][srt]);
+		A13 = np.array(c["A13"][srt]);
+		A22 = np.array(c["A22"][srt]);
+		A23 = np.array(c["A23"][srt]);
+		A33 = np.array(c["A33"][srt]);
+
+		K = np.array(c["K"][srt]);
+
+
+		A = [[],[],[]]
+
+		A[0].append(A11)
+		A[0].append(A12)
+		A[0].append(A13)
+		A[1].append(A12)
+		A[1].append(A22)
+		A[1].append(A23)
+		A[2].append(A13)
+		A[2].append(A23)
+		A[2].append(A33)
+
+		A = np.array(A)
 
 # ========================================================
 #	Define normal vector and invert metric
@@ -228,19 +255,34 @@ for i in ds:
 		print ("Percentage ",counter/NumInt*100," %"  )
 #		MADMInt = np.zeros(N)
 		MADMInt = 0
-		JAMDInt = np.zeros(3)
-		PAMDInt = np.zeros(3)
+		JADMInt = np.zeros(3)
+		PADMInt = np.zeros(3)
 		levi = np.zeros((3,3,3))
+		Ktsr = np.zeros((3,3))
+		deltaij = np.zeros((3,3))
+		pstn = np.zeros(3)
 
-                levi[0,1,2] = 1
+		deltaij[0,0] = 1 
+		deltaij[1,1] = 1 
+		deltaij[2,2] = 1 
+
+		levi[0,1,2] = 1
 		levi[1,2,0] = 1
 		levi[2,0,1] = 1
-                levi[2,1,0] = -1
+		levi[2,1,0] = -1
 		levi[1,0,2] = -1
 		levi[0,2,1] = -1
 
-
+		pstn[0] = x
+		pstn[1] = y 
+		pstn[2] = z 
+		
+		for d0 in range(3):
+			for d1 in range(3):
+				Ktsr[d0,d1] = A[d0,d1]/chi + 1./3.*g[d0,d1]*K/chi
 			
+# ----------------------------------------------------------
+# -------------- MADM measure ------------------------------
 # ----------------------------------------------------------
 
 		for d0 in range(3):
@@ -254,11 +296,32 @@ for i in ds:
 
 		print("ADM mass = ", MADM)
 
-	print("MADM mass ", MADM, "at time",i.current_time)
+
+# ----------------------------------------------------------
+# -------------- JADM measure ------------------------------
+# ----------------------------------------------------------
 	
+		for d0 in range(3):
+			for d1 in range(3):
+				for d2 in range(3):
+					for d3 in range(3):
+						JADMInt[d0] += - 1./(8*np.pi)*levi[d0,d1,d2]*s[d3]*pstn[d1]*(K*deltaij[d3,d2])
+						for d4 in range(3):
+							for d5 in range(3):
+								JADMInt[d0] += + 1./(8*np.pi)*levi[d0,d1,d2]*s[d3]*pstn[d1]*(chi*chi*gu[d4,d3]*gu[d5,d2]*Ktsr[d4,d5]) 
+			JADM[d0] += JADMInt[d0]*w[k]*Rad*Rad*4.0*np.pi
+
+	print("MADM mass ", MADM, "at time",i.current_time)
+
 	MADM_data.append(MADM)
+	J1ADM_data.append(JADM[0])
+	J2ADM_data.append(JADM[1])
+	J3ADM_data.append(JADM[2])
 	time_data.append(i.current_time)	
 	CycleData.append(time.time()-start)
 	np.savetxt('Cycletime.out',CycleData)
 	np.savetxt('time.out',time_data)
 	np.savetxt('MADM.out',MADM_data)
+	np.savetxt('J1ADM.out',J1ADM_data)
+	np.savetxt('J2ADM.out',J2ADM_data)
+	np.savetxt('J3ADM.out',J3ADM_data)
