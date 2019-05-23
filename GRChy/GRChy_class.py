@@ -17,7 +17,7 @@ class GRChy():
         # except Exception as e:
         #     # Error message
 
-        attrs = np.array(h5.attrs, dtype=str) 
+        attrs = np.array(h5.attrs, dtype=str)
         max_level = h5.attrs['max_level']
         fields = attrs[ 'component_' in attrs]
 
